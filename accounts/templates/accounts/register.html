@@ -1,0 +1,264 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Register - Secure Registration{% endblock %}
+
+{% block content %}
+<h1>Create Account</h1>
+
+{% if form.errors %}
+<div class="errors">
+    <ul>
+    {% for field in form %}
+        {% for error in field.errors %}
+            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+        {% endfor %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+        <li>{{ error }}</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form method="post" novalidate id="registerForm">
+    {% csrf_token %}
+    
+    <div class="form-group">
+        <label for="id_email">Email Address</label>
+        {{ form.email }}
+        <span class="field-error" id="email-error"></span>
+    </div>
+    
+    <div class="form-group">
+        <label for="id_password">Password</label>
+        {{ form.password }}
+        <span class="field-error" id="password-error"></span>
+        <div class="password-requirements" id="password-requirements">
+            <small>Password must:</small>
+            <ul>
+                <li id="req-length" class="requirement">Be at least 8 characters</li>
+                <li id="req-not-common" class="requirement">Not be a commonly used password</li>
+                <li id="req-not-numeric" class="requirement">Not be entirely numeric</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="id_password_confirm">Confirm Password</label>
+        {{ form.password_confirm }}
+        <span class="field-error" id="password-confirm-error"></span>
+    </div>
+    
+    <button type="submit" class="btn btn-primary" id="submitBtn">Create Account</button>
+</form>
+
+<div class="link">
+    <p>Already have an account? <a href="#">Sign in</a></p>
+</div>
+
+<style>
+    .field-error {
+        color: #dc3545;
+        font-size: 13px;
+        margin-top: 5px;
+        display: block;
+    }
+    
+    .form-control.error {
+        border-color: #dc3545;
+    }
+    
+    .form-control.valid {
+        border-color: #28a745;
+    }
+    
+    .password-requirements {
+        margin-top: 10px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+    
+    .password-requirements ul {
+        margin: 5px 0 0 0;
+        padding-left: 20px;
+    }
+    
+    .password-requirements li {
+        color: #666;
+        margin: 3px 0;
+    }
+    
+    .requirement.met {
+        color: #28a745;
+    }
+    
+    .requirement.met::before {
+        content: "✓ ";
+    }
+    
+    .requirement.unmet {
+        color: #dc3545;
+    }
+    
+    .requirement.unmet::before {
+        content: "✗ ";
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registerForm');
+    const emailInput = document.getElementById('id_email');
+    const passwordInput = document.getElementById('id_password');
+    const passwordConfirmInput = document.getElementById('id_password_confirm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    const emailError = document.getElementById('email-error');
+    const passwordError = document.getElementById('password-error');
+    const passwordConfirmError = document.getElementById('password-confirm-error');
+    
+    const reqLength = document.getElementById('req-length');
+    const reqNotCommon = document.getElementById('req-not-common');
+    const reqNotNumeric = document.getElementById('req-not-numeric');
+    
+    const commonPasswords = [
+        'password', '12345678', '123456789', '1234567890', 'qwerty123',
+        'password1', 'password123', 'iloveyou', 'admin123', 'welcome1',
+        'letmein', 'monkey', 'dragon', 'master', 'qwertyuiop', 'login'
+    ];
+    
+    function validateEmail() {
+        const email = emailInput.value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (!email) {
+            setError(emailInput, emailError, 'Email is required');
+            return false;
+        }
+        if (!emailRegex.test(email)) {
+            setError(emailInput, emailError, 'Please enter a valid email address');
+            return false;
+        }
+        
+        setValid(emailInput, emailError);
+        return true;
+    }
+    
+    function validatePassword() {
+        const password = passwordInput.value;
+        let isValid = true;
+        
+        if (password.length >= 8) {
+            reqLength.classList.add('met');
+            reqLength.classList.remove('unmet');
+        } else {
+            reqLength.classList.add('unmet');
+            reqLength.classList.remove('met');
+            isValid = false;
+        }
+        
+        if (!commonPasswords.includes(password.toLowerCase())) {
+            reqNotCommon.classList.add('met');
+            reqNotCommon.classList.remove('unmet');
+        } else {
+            reqNotCommon.classList.add('unmet');
+            reqNotCommon.classList.remove('met');
+            isValid = false;
+        }
+        
+        if (!/^\d+$/.test(password)) {
+            reqNotNumeric.classList.add('met');
+            reqNotNumeric.classList.remove('unmet');
+        } else {
+            reqNotNumeric.classList.add('unmet');
+            reqNotNumeric.classList.remove('met');
+            isValid = false;
+        }
+        
+        if (!password) {
+            setError(passwordInput, passwordError, 'Password is required');
+            return false;
+        }
+        
+        if (isValid) {
+            setValid(passwordInput, passwordError);
+        } else {
+            passwordInput.classList.add('error');
+            passwordInput.classList.remove('valid');
+        }
+        
+        if (passwordConfirmInput.value) {
+            validatePasswordConfirm();
+        }
+        
+        return isValid;
+    }
+    
+    function validatePasswordConfirm() {
+        const password = passwordInput.value;
+        const confirmPassword = passwordConfirmInput.value;
+        
+        if (!confirmPassword) {
+            setError(passwordConfirmInput, passwordConfirmError, 'Please confirm your password');
+            return false;
+        }
+        if (password !== confirmPassword) {
+            setError(passwordConfirmInput, passwordConfirmError, 'Passwords do not match');
+            return false;
+        }
+        
+        setValid(passwordConfirmInput, passwordConfirmError);
+        return true;
+    }
+    
+    function setError(input, errorElement, message) {
+        input.classList.add('error');
+        input.classList.remove('valid');
+        errorElement.textContent = message;
+    }
+    
+    function setValid(input, errorElement) {
+        input.classList.remove('error');
+        input.classList.add('valid');
+        errorElement.textContent = '';
+    }
+    
+    emailInput.addEventListener('blur', validateEmail);
+    emailInput.addEventListener('input', function() {
+        if (emailInput.classList.contains('error')) {
+            validateEmail();
+        }
+    });
+    
+    passwordInput.addEventListener('input', validatePassword);
+    passwordInput.addEventListener('blur', validatePassword);
+    
+    passwordConfirmInput.addEventListener('blur', validatePasswordConfirm);
+    passwordConfirmInput.addEventListener('input', function() {
+        if (passwordConfirmInput.classList.contains('error') || passwordConfirmInput.value) {
+            validatePasswordConfirm();
+        }
+    });
+    
+    form.addEventListener('submit', function(e) {
+        const isEmailValid = validateEmail();
+        const isPasswordValid = validatePassword();
+        const isConfirmValid = validatePasswordConfirm();
+        
+        if (!isEmailValid || !isPasswordValid || !isConfirmValid) {
+            e.preventDefault();
+            
+            if (!isEmailValid) {
+                emailInput.focus();
+            } else if (!isPasswordValid) {
+                passwordInput.focus();
+            } else if (!isConfirmValid) {
+                passwordConfirmInput.focus();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

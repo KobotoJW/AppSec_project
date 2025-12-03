@@ -1,0 +1,28 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Registration Successful{% endblock %}
+
+{% block content %}
+<div class="success-icon">📧</div>
+<h1>Check Your Email</h1>
+<p class="subtitle">We've sent an activation link to your email address</p>
+
+<div class="alert alert-info">
+    <strong>Next steps:</strong>
+    <ol style="margin-top: 10px; padding-left: 20px;">
+        <li>Check your email inbox</li>
+        <li>Click the activation link</li>
+        <li>Start using your account</li>
+    </ol>
+</div>
+
+<p class="subtitle" style="margin-top: 20px;">
+    Didn't receive the email? Check your spam folder or
+</p>
+
+<a href="{% url 'accounts:resend_activation' %}" class="btn btn-secondary">Resend Activation Email</a>
+
+<div class="link">
+    <a href="{% url 'accounts:register' %}">← Back to registration</a>
+</div>
+{% endblock %}

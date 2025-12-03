@@ -1,0 +1,38 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Resend Activation Email{% endblock %}
+
+{% block content %}
+<h1>Resend Activation</h1>
+<p class="subtitle">Enter your email to receive a new activation link</p>
+
+{% if form.errors %}
+<div class="errors">
+    <ul>
+    {% for field in form %}
+        {% for error in field.errors %}
+            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+        {% endfor %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+        <li>{{ error }}</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    
+    <div class="form-group">
+        <label for="id_email">Email Address</label>
+        {{ form.email }}
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Send Activation Link</button>
+</form>
+
+<div class="link">
+    <a href="{% url 'accounts:register' %}">← Back to registration</a>
+</div>
+{% endblock %}

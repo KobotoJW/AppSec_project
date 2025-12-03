@@ -1,0 +1,31 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Activation Failed{% endblock %}
+
+{% block content %}
+<div class="success-icon">❌</div>
+<h1>Activation Failed</h1>
+<p class="subtitle">{{ error_message }}</p>
+
+{% if can_resend %}
+<div class="alert alert-info">
+    You can request a new activation link to be sent to your email.
+</div>
+
+<a href="{% url 'accounts:resend_activation' %}?email={{ user_email }}" class="btn btn-primary">
+    Resend Activation Email
+</a>
+{% else %}
+<div class="alert alert-danger">
+    Please try registering again or contact support if the issue persists.
+</div>
+
+<a href="{% url 'accounts:register' %}" class="btn btn-primary">
+    Register Again
+</a>
+{% endif %}
+
+<div class="link">
+    <a href="{% url 'accounts:register' %}">← Back to registration</a>
+</div>
+{% endblock %}
