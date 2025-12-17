@@ -3,29 +3,33 @@
 {% block title %}Activation Failed{% endblock %}
 
 {% block content %}
-<div class="success-icon">❌</div>
-<h1>Activation Failed</h1>
-<p class="subtitle">{{ error_message }}</p>
+<div class="card">
+    <div class="card-body" style="text-align: center; padding: 40px 30px;">
+        <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+        <h4 style="margin-bottom: 10px;">Activation Failed</h4>
+        <p style="color: #666; margin-bottom: 20px;">{{ error_message|default:"Unable to activate your account." }}</p>
 
-{% if can_resend %}
-<div class="alert alert-info">
-    You can request a new activation link to be sent to your email.
-</div>
+        {% if can_resend %}
+        <div class="alert alert-info">
+            You can request a new activation link to be sent to your email.
+        </div>
 
-<a href="{% url 'accounts:resend_activation' %}?email={{ user_email }}" class="btn btn-primary">
-    Resend Activation Email
-</a>
-{% else %}
-<div class="alert alert-danger">
-    Please try registering again or contact support if the issue persists.
-</div>
+        <a href="{% url 'accounts:resend_activation' %}?email={{ user_email }}" class="btn btn-primary">
+            Resend Activation Email
+        </a>
+        {% else %}
+        <div class="alert alert-danger">
+            Please try registering again or contact support if the issue persists.
+        </div>
 
-<a href="{% url 'accounts:register' %}" class="btn btn-primary">
-    Register Again
-</a>
-{% endif %}
+        <a href="{% url 'accounts:register' %}" class="btn btn-primary">
+            Register Again
+        </a>
+        {% endif %}
 
-<div class="link">
-    <a href="{% url 'accounts:register' %}">← Back to registration</a>
+        <hr>
+
+        <p class="link-secondary"><a href="{% url 'accounts:register' %}">Back to Registration</a></p>
+    </div>
 </div>
 {% endblock %}

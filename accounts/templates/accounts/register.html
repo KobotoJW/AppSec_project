@@ -3,107 +3,146 @@
 {% block title %}Register - Secure Registration{% endblock %}
 
 {% block content %}
-<h1>Create Account</h1>
-
-{% if form.errors %}
-<div class="errors">
-    <ul>
-    {% for field in form %}
-        {% for error in field.errors %}
-            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-        {% endfor %}
-    {% endfor %}
-    {% for error in form.non_field_errors %}
-        <li>{{ error }}</li>
-    {% endfor %}
-    </ul>
-</div>
-{% endif %}
-
-<form method="post" novalidate id="registerForm">
-    {% csrf_token %}
-    
-    <div class="form-group">
-        <label for="id_email">Email Address</label>
-        {{ form.email }}
-        <span class="field-error" id="email-error"></span>
+<div class="card">
+    <div class="card-header">
+        <h4>Create Account</h4>
     </div>
-    
-    <div class="form-group">
-        <label for="id_password">Password</label>
-        {{ form.password }}
-        <span class="field-error" id="password-error"></span>
-        <div class="password-requirements" id="password-requirements">
-            <small>Password must:</small>
-            <ul>
-                <li id="req-length" class="requirement">Be at least 8 characters</li>
-                <li id="req-not-common" class="requirement">Not be a commonly used password</li>
-                <li id="req-not-numeric" class="requirement">Not be entirely numeric</li>
+    <div class="card-body">
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Registration Errors:</strong>
+            <ul style="margin-top: 10px; padding-left: 20px;">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
             </ul>
         </div>
-    </div>
-    
-    <div class="form-group">
-        <label for="id_password_confirm">Confirm Password</label>
-        {{ form.password_confirm }}
-        <span class="field-error" id="password-confirm-error"></span>
-    </div>
-    
-    <button type="submit" class="btn btn-primary" id="submitBtn">Create Account</button>
-</form>
+        {% endif %}
 
-<div class="link">
-    <p>Already have an account? <a href="#">Sign in</a></p>
+        <form method="post" novalidate id="registerForm">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="id_email" class="form-label">Email Address</label>
+                {{ form.email }}
+                <span class="field-error" id="email-error"></span>
+            </div>
+            
+            <div class="mb-3">
+                <label for="id_password" class="form-label">Password</label>
+                {{ form.password }}
+                <span class="field-error" id="password-error"></span>
+                <div class="password-requirements" id="password-requirements">
+                    <small>Password must:</small>
+                    <ul>
+                        <li id="req-length" class="requirement">Be at least 8 characters</li>
+                        <li id="req-not-common" class="requirement">Not be a commonly used password</li>
+                        <li id="req-not-numeric" class="requirement">Not be entirely numeric</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="id_password_confirm" class="form-label">Confirm Password</label>
+                {{ form.password_confirm }}
+                <span class="field-error" id="password-confirm-error"></span>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" id="submitBtn">Create Account</button>
+        </form>
+
+        <hr>
+
+        <div class="text-center">
+            <p class="link-secondary">Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a></p>
+        </div>
+    </div>
 </div>
 
 <style>
     .field-error {
-        color: #dc3545;
+        color: #721c24;
         font-size: 13px;
-        margin-top: 5px;
+        margin-top: 4px;
         display: block;
     }
     
     .form-control.error {
-        border-color: #dc3545;
+        border-color: #721c24 !important;
     }
     
     .form-control.valid {
-        border-color: #28a745;
+        border-color: #155724 !important;
     }
     
     .password-requirements {
-        margin-top: 10px;
-        padding: 10px;
-        background: #f8f9fa;
+        margin-top: 12px;
+        padding: 12px;
+        background-color: #f8f9fa;
+        border: 1px solid #e0e0e0;
         border-radius: 6px;
         font-size: 13px;
     }
     
+    .password-requirements small {
+        font-weight: 500;
+        color: #333;
+    }
+    
     .password-requirements ul {
-        margin: 5px 0 0 0;
+        margin: 8px 0 0 0;
         padding-left: 20px;
+        list-style: disc;
     }
     
     .password-requirements li {
         color: #666;
-        margin: 3px 0;
+        margin: 4px 0;
+        line-height: 1.4;
     }
     
     .requirement.met {
-        color: #28a745;
+        color: #155724;
+        font-weight: 500;
     }
     
     .requirement.met::before {
         content: "✓ ";
+        margin-right: 4px;
     }
     
     .requirement.unmet {
-        color: #dc3545;
+        color: #721c24;
     }
     
     .requirement.unmet::before {
         content: "✗ ";
+        margin-right: 4px;
+    }
+    
+    .text-center {
+        text-align: center;
+    }
+    
+    .link-secondary {
+        color: #666;
+        font-size: 14px;
+    }
+    
+    .link-secondary a {
+        color: #2c3e50;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .link-secondary a:hover {
+        text-decoration: underline;
+        color: #1a252f;
     }
 </style>
 

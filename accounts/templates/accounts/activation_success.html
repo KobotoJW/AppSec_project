@@ -3,17 +3,21 @@
 {% block title %}Account Activated{% endblock %}
 
 {% block content %}
-<div class="success-icon">✅</div>
-<h1>Account Activated!</h1>
-<p class="subtitle">Your account has been successfully activated</p>
+<div class="card">
+    <div class="card-body" style="text-align: center; padding: 40px 30px;">
+        <div style="font-size: 48px; margin-bottom: 20px;">✅</div>
+        <h4 style="margin-bottom: 10px;">Account Activated!</h4>
+        <p style="color: #666; margin-bottom: 20px;">Your account has been successfully activated</p>
 
-<div class="alert alert-success">
-    You can now sign in to your account and start using our services.
-</div>
+        <div class="alert alert-success">
+            You can now sign in to your account and start using our services.
+        </div>
 
-<a href="#" class="btn btn-primary">Sign In</a>
+        <a href="{% url 'accounts:login' %}" class="btn btn-primary">Sign In</a>
 
-<div class="link">
-    <a href="{% url 'accounts:register' %}">← Back to registration</a>
+        <hr>
+
+        <p class="link-secondary"><a href="{% url 'accounts:register' %}">Back to Registration</a></p>
+    </div>
 </div>
 {% endblock %}

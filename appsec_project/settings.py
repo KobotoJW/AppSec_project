@@ -137,6 +137,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@example.com'
 
+# Use UTF-8 encoding to prevent quoted-printable line breaks
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = False
+
 # For production, configure SMTP:
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_HOST = 'smtp.example.com'
@@ -152,6 +156,15 @@ DEFAULT_FROM_EMAIL = 'noreply@example.com'
 # SECURE_HSTS_PRELOAD = True
 # SESSION_COOKIE_SECURE = True
 # CSRF_COOKIE_SECURE = True
+
+# Session Configuration
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Server-side session storage
+SESSION_COOKIE_AGE = 1800  # 30 minutes idle timeout
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = True  # Update session timeout on each request
 
 # Password Hashers - bcrypt is preferred
 PASSWORD_HASHERS = [
