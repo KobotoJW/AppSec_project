@@ -8,9 +8,7 @@ from django.contrib.auth.hashers import check_password
 User = get_user_model()
 
 
-class RegistrationForm(forms.Form):
-    """Form for user registration with email and password."""
-    
+class RegistrationForm(forms.Form):    
     email = forms.EmailField(
         max_length=255,
         widget=forms.EmailInput(attrs={
@@ -95,9 +93,7 @@ class ResendActivationForm(forms.Form):
         return email
 
 
-class LoginForm(forms.Form):
-    """Form for user login with email and password."""
-    
+class LoginForm(forms.Form):    
     email = forms.EmailField(
         max_length=255,
         widget=forms.EmailInput(attrs={
@@ -125,22 +121,17 @@ class LoginForm(forms.Form):
         if not email or not password:
             return cleaned_data
         
-        # Attempt to authenticate user
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            # Generic error to prevent email enumeration
             raise ValidationError('Invalid email or password.')
         
-        # Check if account is locked
         if user.is_account_locked:
             raise ValidationError('Account temporarily locked. Please try again later or reset your password.')
         
-        # Verify password
         if not user.check_password(password):
             raise ValidationError('Invalid email or password.')
         
-        # Check if account is active
         if not user.is_active:
             raise ValidationError('Account is not activated. Please check your email for activation link.')
         
@@ -148,9 +139,7 @@ class LoginForm(forms.Form):
         return cleaned_data
 
 
-class PasswordResetRequestForm(forms.Form):
-    """Form to request a password reset via email."""
-    
+class PasswordResetRequestForm(forms.Form):    
     email = forms.EmailField(
         max_length=255,
         widget=forms.EmailInput(attrs={
@@ -163,14 +152,10 @@ class PasswordResetRequestForm(forms.Form):
     
     def clean_email(self):
         email = self.cleaned_data.get('email', '').lower().strip()
-        # Don't reveal if email exists or not (prevent enumeration)
-        # Just return the email; view will handle logic
         return email
 
 
-class PasswordResetForm(forms.Form):
-    """Form to set a new password after email verification."""
-    
+class PasswordResetForm(forms.Form):    
     password = forms.CharField(
         min_length=8,
         widget=forms.PasswordInput(attrs={

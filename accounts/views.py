@@ -9,12 +9,54 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
+from django.core.cache import cache
+from django.http import HttpResponse
 from datetime import timedelta
+from functools import wraps
 
 from .forms import RegistrationForm, ResendActivationForm, LoginForm, PasswordResetRequestForm, PasswordResetForm
 from .models import ActivationToken, PasswordResetToken, LoginAttempt, SecurityEvent
 
 User = get_user_model()
+
+
+def rate_limit(max_attempts=5, window_seconds=900):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, request, *args, **kwargs):
+            # Get client IP
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                client_ip = x_forwarded_for.split(',')[0]
+            else:
+                client_ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
+            
+            cache_key = f'rate_limit:{func.__name__}:{client_ip}'
+            
+            attempts = cache.get(cache_key, 0)
+            
+            if attempts >= max_attempts:
+                print(f"\n{'='*60}")
+                print(f"RATE LIMIT EXCEEDED")
+                print(f"{'='*60}")
+                print(f"Endpoint: {func.__name__}")
+                print(f"IP Address: {client_ip}")
+                print(f"Attempts: {attempts}/{max_attempts}")
+                print(f"Cache key: {cache_key}")
+                print(f"{'='*60}\n")
+                
+                return HttpResponse(
+                    'Too many login attempts. Please try again later.',
+                    status=429,
+                    content_type='text/plain'
+                )
+            
+            cache.set(cache_key, attempts + 1, window_seconds)
+            
+            return func(self, request, *args, **kwargs)
+        
+        return wrapper
+    return decorator
 
 
 class RegisterView(View):
@@ -68,7 +110,6 @@ If you did not register for this account, please ignore this email.
             print(f"Raw token (for hashing): {raw_token}")
             print(f"Activation URL: {activation_url}")
             
-            # Use EmailMessage to avoid quoted-printable encoding issues
             email = EmailMessage(
                 subject=subject,
                 body=message,
@@ -96,6 +137,7 @@ class LoginView(View):
         form = LoginForm()
         return render(request, self.template_name, {'form': form})
     
+    @rate_limit(max_attempts=5, window_seconds=900)
     def post(self, request):
         form = LoginForm(request.POST)
         email = request.POST.get('email', '').lower().strip()
@@ -105,7 +147,6 @@ class LoginView(View):
         if form.is_valid():
             user = form.user
             
-            # Log successful login attempt
             LoginAttempt.objects.create(
                 email=email,
                 ip_address=ip_address,
@@ -113,7 +154,6 @@ class LoginView(View):
                 success=True
             )
             
-            # Create security event
             SecurityEvent.objects.create(
                 user=user,
                 event_type='login',
@@ -227,6 +267,7 @@ class PasswordResetRequestView(View):
         form = PasswordResetRequestForm()
         return render(request, self.template_name, {'form': form})
     
+    @rate_limit(max_attempts=3, window_seconds=3600)  # 3 attempts per hour per IP
     def post(self, request):
         form = PasswordResetRequestForm(request.POST)
         ip_address = self._get_client_ip(request)

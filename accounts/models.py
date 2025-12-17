@@ -17,7 +17,7 @@ class CustomUserManager(BaseUserManager):
         email = self.normalize_email(email)
         extra_fields.setdefault('is_active', False)
         user = self.model(email=email, **extra_fields)
-        user.set_password(password)  # Uses Django's built-in hashing
+        user.set_password(password)
         user.save(using=self._db)
         return user
     
@@ -85,7 +85,6 @@ class ActivationToken(models.Model):
     
     @classmethod
     def create_token(cls, user):
-        # Generate token using hex encoding (only 0-9, a-f) - completely URL safe
         raw_token = secrets.token_hex(32)
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         expires_at = timezone.now() + timedelta(hours=cls.TOKEN_EXPIRY_HOURS)
@@ -98,7 +97,6 @@ class ActivationToken(models.Model):
         print(f"Token hash: {token_hash}")
         print(f"Expires at: {expires_at}")
         
-        # If existing unused tokens, mark them as used
         old_tokens = cls.objects.filter(user=user, used=False).update(used=True)
         print(f"Marked {old_tokens} old tokens as used")
         
@@ -124,10 +122,9 @@ class ActivationToken(models.Model):
         print(f"Token length: {len(raw_token)}")
         print(f"Token hash: {token_hash}")
         
-        # List all tokens in database for debugging
         all_tokens = cls.objects.filter(user__isnull=False)
         print(f"\nTokens in database: {all_tokens.count()}")
-        for t in all_tokens[:5]:  # Show first 5
+        for t in all_tokens[:5]:
             print(f"  - Hash: {t.token_hash[:30]}... (used={t.used})")
         
         try:
@@ -183,12 +180,10 @@ class PasswordResetToken(models.Model):
     @classmethod
     def create_token(cls, user):
         """Create a password reset token for a user."""
-        # Generate token using hex encoding (only 0-9, a-f) - completely URL safe
         raw_token = secrets.token_hex(32)
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         expires_at = timezone.now() + timedelta(hours=cls.TOKEN_EXPIRY_HOURS)
         
-        # Invalidate any existing unused tokens
         cls.objects.filter(user=user, used=False).update(used=True)
         token = cls.objects.create(
             user=user,
