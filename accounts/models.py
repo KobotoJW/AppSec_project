@@ -29,10 +29,16 @@ class CustomUserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    ROLE_CHOICES = [
+        ('user', 'Regular User'),
+        ('admin', 'Administrator'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, max_length=255)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
     last_login = models.DateTimeField(null=True, blank=True)
     is_locked = models.BooleanField(default=False)
     locked_until = models.DateTimeField(null=True, blank=True)
@@ -51,6 +57,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def __str__(self):
         return self.email
+    
+    @property
+    def is_admin(self):
+        """Check if user has admin role"""
+        return self.role == 'admin' or self.is_superuser
     
     @property
     def is_account_locked(self):

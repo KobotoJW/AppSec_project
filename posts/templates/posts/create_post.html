@@ -1,0 +1,49 @@
+{% extends "posts/base.html" %}
+
+{% block title %}Create Post - Secure Content Platform{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 2rem auto;">
+    <h2>Create New Post</h2>
+    <p style="color: #7f8c8d; margin-bottom: 1.5rem;">Share your thoughts with the community</p>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-error">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <label for="{{ form.content.id_for_label }}">Content *</label>
+            {{ form.content }}
+            {% if form.content.errors %}
+                <div class="alert alert-error">
+                    {{ form.content.errors }}
+                </div>
+            {% endif %}
+            <small style="color: #7f8c8d;">Maximum 5000 characters</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.image.id_for_label }}">Image (Optional)</label>
+            {{ form.image }}
+            {% if form.image.errors %}
+                <div class="alert alert-error">
+                    {{ form.image.errors }}
+                </div>
+            {% endif %}
+            <small style="color: #7f8c8d;">
+                Supported formats: JPG, PNG, GIF, WEBP. Max size: 5MB. Max dimensions: 4096x4096px.
+            </small>
+        </div>
+        
+        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+            <button type="submit" class="btn btn-success">Create Post</button>
+            <a href="{% url 'posts:feed' %}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -24,7 +24,7 @@ def rate_limit(max_attempts=5, window_seconds=900):
     def decorator(func):
         @wraps(func)
         def wrapper(self, request, *args, **kwargs):
-            # Get client IP
+            # client IP
             x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
             if x_forwarded_for:
                 client_ip = x_forwarded_for.split(',')[0]
@@ -225,6 +225,12 @@ class LoginView(View):
 
 class LogoutView(View):
     def get(self, request):
+        return self._logout(request)
+    
+    def post(self, request):
+        return self._logout(request)
+    
+    def _logout(self, request):
         if request.user.is_authenticated:
             # Create security event
             SecurityEvent.objects.create(
