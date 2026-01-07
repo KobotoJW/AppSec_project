@@ -12,7 +12,7 @@ from .models import Post, Comment, Rating, ContentReport
 from .forms import PostForm, CommentForm, RatingForm, ContentReportForm, SearchForm
 from .utils import (
     rate_limit, log_security_event, get_client_ip,
-    strip_image_metadata, reencode_image, check_content_safety, require_role
+    reencode_image, check_content_safety, require_role
 )
 
 

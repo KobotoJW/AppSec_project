@@ -14,6 +14,7 @@ from django.http import HttpResponse
 from datetime import timedelta
 from functools import wraps
 
+from posts.utils import get_client_ip
 from .forms import RegistrationForm, ResendActivationForm, LoginForm, PasswordResetRequestForm, PasswordResetForm
 from .models import ActivationToken, PasswordResetToken, LoginAttempt, SecurityEvent
 
@@ -36,15 +37,6 @@ def rate_limit(max_attempts=5, window_seconds=900):
             attempts = cache.get(cache_key, 0)
             
             if attempts >= max_attempts:
-                print(f"\n{'='*60}")
-                print(f"RATE LIMIT EXCEEDED")
-                print(f"{'='*60}")
-                print(f"Endpoint: {func.__name__}")
-                print(f"IP Address: {client_ip}")
-                print(f"Attempts: {attempts}/{max_attempts}")
-                print(f"Cache key: {cache_key}")
-                print(f"{'='*60}\n")
-                
                 return HttpResponse(
                     'Too many login attempts. Please try again later.',
                     status=429,
@@ -104,27 +96,14 @@ If you did not register for this account, please ignore this email.
 """
         
         try:
-            print(f"\n{'='*60}")
-            print(f"SENDING ACTIVATION EMAIL TO: {user.email}")
-            print(f"{'='*60}")
-            print(f"Raw token (for hashing): {raw_token}")
-            print(f"Activation URL: {activation_url}")
-            
             email = EmailMessage(
                 subject=subject,
                 body=message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=[user.email],
             )
-            result = email.send(fail_silently=False)
-            
-            print(f"Email sent successfully. Messages sent: {result}")
-            print(f"{'='*60}\n")
+            email.send(fail_silently=False)
         except Exception as e:
-            print(f"\n{'='*60}")
-            print(f"ERROR: Failed to send activation email to {user.email}")
-            print(f"Exception: {e}")
-            print(f"{'='*60}\n")
             raise
 
 
@@ -141,7 +120,7 @@ class LoginView(View):
     def post(self, request):
         form = LoginForm(request.POST)
         email = request.POST.get('email', '').lower().strip()
-        ip_address = self._get_client_ip(request)
+        ip_address = get_client_ip(request)
         user_agent = request.META.get('HTTP_USER_AGENT', '')
         
         if form.is_valid():
@@ -184,15 +163,6 @@ class LoginView(View):
             self._check_and_lock_account(email, ip_address)
         
         return render(request, self.template_name, {'form': form})
-    
-    def _get_client_ip(self, request):
-        """Extract client IP address from request."""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
-        return ip
     
     def _check_and_lock_account(self, email, ip_address):
         """Check failed login attempts and lock account if threshold exceeded."""
@@ -243,15 +213,6 @@ class LogoutView(View):
         logout(request)
         messages.success(request, 'Logged out successfully.')
         return redirect('accounts:login')
-    
-    def _get_client_ip(self, request):
-        """Extract client IP address from request."""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
-        return ip
 
 
 class DashboardView(View):
@@ -308,15 +269,7 @@ class PasswordResetRequestView(View):
         
         return render(request, self.template_name, {'form': form})
     
-    def _get_client_ip(self, request):
-        """Extract client IP address from request."""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
-        return ip
-    
+
     def _send_password_reset_email(self, request, user, raw_token):
         reset_url = request.build_absolute_uri(
             reverse('accounts:password_reset_confirm', kwargs={'token': raw_token})
@@ -416,15 +369,6 @@ class PasswordResetConfirmView(View):
             'token': token,
         }
         return render(request, self.template_name, context)
-    
-    def _get_client_ip(self, request):
-        """Extract client IP address from request."""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
-        return ip
     
     def _invalidate_all_sessions(self, user):
         """Invalidate all sessions for a user."""

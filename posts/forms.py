@@ -1,7 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from PIL import Image
-import io
 from .models import Post, Comment, Rating, ContentReport
 
 
@@ -32,8 +31,6 @@ class PostForm(forms.ModelForm):
         content = self.cleaned_data.get('content', '').strip()
         if not content:
             raise ValidationError("Content cannot be empty")
-        if len(content) < 1:
-            raise ValidationError("Content is too short")
         if len(content) > 5000:
             raise ValidationError("Content is too long (max 5000 characters)")
         return content
@@ -94,8 +91,6 @@ class CommentForm(forms.ModelForm):
         content = self.cleaned_data.get('content', '').strip()
         if not content:
             raise ValidationError("Comment cannot be empty")
-        if len(content) < 1:
-            raise ValidationError("Comment is too short")
         if len(content) > 2000:
             raise ValidationError("Comment is too long (max 2000 characters)")
         return content

@@ -3,7 +3,6 @@ from django.core.cache import cache
 from django.http import HttpResponseForbidden
 from django.utils import timezone
 from datetime import timedelta
-import hashlib
 
 
 def rate_limit(key_prefix, max_requests, time_window_minutes):
@@ -79,25 +78,6 @@ def log_security_event(event_type, user=None, ip_address=None, user_agent=None, 
     return event
 
 
-def sanitize_filename(filename):
-    """Sanitize uploaded filename to prevent path traversal"""
-    import os
-    import re
-    
-    # Get only the filename, not the path
-    filename = os.path.basename(filename)
-    
-    # Remove any non-alphanumeric characters except dots and underscores
-    filename = re.sub(r'[^a-zA-Z0-9._-]', '_', filename)
-    
-    # Limit length
-    name, ext = os.path.splitext(filename)
-    if len(name) > 50:
-        name = name[:50]
-    
-    return f"{name}{ext}"
-
-
 def strip_image_metadata(image_file):
     """
     Strip EXIF and other metadata from uploaded images
@@ -164,6 +144,8 @@ def check_content_safety(text):
     Basic content safety check
     Can be extended with ML-based moderation services
     """
+    import re
+    
     # List of blocked words/patterns
     blocked_patterns = [
         r'<script',
@@ -172,7 +154,6 @@ def check_content_safety(text):
         r'onclick=',
     ]
     
-    import re
     text_lower = text.lower()
     
     for pattern in blocked_patterns:
