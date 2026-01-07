@@ -11,8 +11,10 @@ from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.core.cache import cache
 from django.http import HttpResponse
+from django.contrib.sessions.models import Session
 from datetime import timedelta
 from functools import wraps
+import json
 
 from posts.utils import get_client_ip
 from .forms import RegistrationForm, ResendActivationForm, LoginForm, PasswordResetRequestForm, PasswordResetForm
@@ -206,7 +208,7 @@ class LogoutView(View):
             SecurityEvent.objects.create(
                 user=request.user,
                 event_type='logout',
-                ip_address=self._get_client_ip(request),
+                ip_address=get_client_ip(request),
                 user_agent=request.META.get('HTTP_USER_AGENT', '')
             )
         
@@ -360,12 +362,6 @@ class PasswordResetConfirmView(View):
         return render(request, self.template_name, context)
     
     def _invalidate_all_sessions(self, user):
-        """Invalidate all sessions for a user."""
-        # In Django, sessions are stored in the database or cache
-        # We can use the session framework to clear all sessions for this user
-        from django.contrib.sessions.models import Session
-        import json
-        
         for session in Session.objects.all():
             data = session.get_decoded()
             if data.get('_auth_user_id') == str(user.id):

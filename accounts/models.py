@@ -113,33 +113,24 @@ class ActivationToken(models.Model):
     
     @classmethod
     def verify_token(cls, raw_token):
-        """
-        Verify activation token with constant-time checks to prevent timing attacks
-        """
-        import hmac
-        
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         
         try:
             token = cls.objects.select_related('user').get(token_hash=token_hash)
             
-            # Perform all checks before returning to prevent timing attacks
             is_valid = (
                 not token.used and
                 timezone.now() <= token.expires_at
             )
             
             if is_valid:
-                # Mark token as used
                 token.used = True
                 token.save(update_fields=['used'])
                 return True, 'Account activated successfully.', token.user
             
         except cls.DoesNotExist:
-            pass  # Fall through to generic error
+            pass
         
-        # Always return same generic message to prevent timing attacks
-        # Don't reveal if token exists, is used, or is expired
         return False, 'Invalid or expired activation link.', None
     
     @property
@@ -183,32 +174,24 @@ class PasswordResetToken(models.Model):
     
     @classmethod
     def verify_token(cls, raw_token):
-        """
-        Verify password reset token with constant-time checks to prevent timing attacks
-        """
-        import hmac
-        
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         
         try:
             token = cls.objects.select_related('user').get(token_hash=token_hash)
             
-            # Perform all checks before returning to prevent timing attacks
             is_valid = (
                 not token.used and
                 timezone.now() <= token.expires_at
             )
             
             if is_valid:
-                # Mark token as used
                 token.used = True
                 token.save(update_fields=['used'])
                 return True, 'Password reset successful.', token.user
             
         except cls.DoesNotExist:
-            pass  # Fall through to generic error
+            pass
         
-        # Always return same generic message to prevent timing attacks
         return False, 'Invalid or expired password reset link.', None
     
     @property

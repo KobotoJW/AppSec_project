@@ -16,10 +16,12 @@ from .utils import (
 )
 
 
+@rate_limit('search', max_requests=100, time_window_minutes=60)
 def feed(request):
     """
     Public feed visible to all users (guests and authenticated)
     Shows all non-deleted posts with search functionality
+    Rate limited to prevent abuse: 100 searches per hour
     """
     search_form = SearchForm(request.GET or None)
     query = None
@@ -51,9 +53,21 @@ def feed(request):
         rating_avg=Avg('ratings__value')
     ).order_by('-created_at')  # Newest posts first
     
-    # Pagination
+    # Pagination with validation
     paginator = Paginator(posts, 10)  # 10 posts per page
-    page_number = request.GET.get('page')
+    
+    # Validate and sanitize page number
+    page_number = request.GET.get('page', 1)
+    try:
+        page_number = int(page_number)
+        # Limit to reasonable range
+        if page_number < 1:
+            page_number = 1
+        elif page_number > 10000:  # Maximum 10,000 pages
+            page_number = 10000
+    except (TypeError, ValueError):
+        page_number = 1
+    
     page_obj = paginator.get_page(page_number)
     
     context = {

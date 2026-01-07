@@ -14,10 +14,8 @@ from pathlib import Path
 import os
 from django.core.management.utils import get_random_secret_key
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file in development
 try:
     from dotenv import load_dotenv
     load_dotenv(BASE_DIR / '.env')
@@ -26,21 +24,14 @@ except ImportError:
     pass
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-# Generate a new key for production: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 if not SECRET_KEY:
     if os.environ.get('DJANGO_DEBUG', 'True') == 'True':
-        # Development fallback - generate random key
         SECRET_KEY = get_random_secret_key()
         print("⚠️  WARNING: Using auto-generated SECRET_KEY. Set DJANGO_SECRET_KEY environment variable for production!")
     else:
         raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production!")
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
@@ -198,13 +189,21 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
-# Content Security Policy (CSP)
-# For production, configure properly based on your needs
+# Enhanced Content Security Policy (CSP)
+# Stricter policy to prevent XSS and other injection attacks
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+CSP_STYLE_SRC = ("'self'",)  # Removed 'unsafe-inline' for better security
 CSP_SCRIPT_SRC = ("'self'",)
-CSP_IMG_SRC = ("'self'", "data:")
+CSP_IMG_SRC = ("'self'",)  # Removed data: URIs to prevent SVG XSS
 CSP_FONT_SRC = ("'self'",)
+CSP_FRAME_ANCESTORS = ("'none'",)  # Prevent clickjacking
+CSP_FORM_ACTION = ("'self'",)  # Restrict form submissions
+CSP_BASE_URI = ("'self'",)  # Prevent base tag injection
+CSP_OBJECT_SRC = ("'none'",)  # Block plugins
+CSP_CONNECT_SRC = ("'self'",)  # Restrict AJAX/WebSocket connections
+
+# Additional security headers
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Server-side session storage

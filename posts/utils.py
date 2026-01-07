@@ -2,17 +2,24 @@ from functools import wraps
 from django.core.cache import cache
 from django.http import HttpResponseForbidden
 from django.utils import timezone
+from django.shortcuts import redirect
 from datetime import timedelta
+import ipaddress
+import io
+import re
+from PIL import Image
 
 
 def rate_limit(key_prefix, max_requests, time_window_minutes):
     """
-    Rate limiting decorator
+    Rate limiting decorator with atomic operations
     
     Args:
         key_prefix: Prefix for cache key (e.g., 'post_create', 'comment_add')
         max_requests: Maximum number of requests allowed
         time_window_minutes: Time window in minutes
+    
+    Note: For production, use Redis cache backend for distributed rate limiting
     """
     def decorator(view_func):
         @wraps(view_func)
@@ -25,21 +32,27 @@ def rate_limit(key_prefix, max_requests, time_window_minutes):
                 identifier = get_client_ip(request)
             
             cache_key = f"rate_limit:{key_prefix}:{identifier}"
+            timeout = time_window_minutes * 60
             
-            # Get current request count
-            request_count = cache.get(cache_key, 0)
+            # Try atomic increment first
+            try:
+                # This is atomic in most cache backends
+                current_count = cache.incr(cache_key)
+                
+                # If this is the first increment, set the expiry
+                if current_count == 1:
+                    cache.touch(cache_key, timeout)
+                    
+            except ValueError:
+                # Key doesn't exist yet, create it atomically
+                cache.add(cache_key, 1, timeout)
+                current_count = 1
             
-            if request_count >= max_requests:
+            # Check if limit exceeded
+            if current_count > max_requests:
                 return HttpResponseForbidden(
                     f"Rate limit exceeded. Please try again in {time_window_minutes} minutes."
                 )
-            
-            # Increment counter
-            if request_count == 0:
-                # First request - set expiry
-                cache.set(cache_key, 1, time_window_minutes * 60)
-            else:
-                cache.incr(cache_key)
             
             return view_func(request, *args, **kwargs)
         return wrapper
@@ -47,24 +60,28 @@ def rate_limit(key_prefix, max_requests, time_window_minutes):
 
 
 def get_client_ip(request):
-    """Get client IP address from request"""
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    
     if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0].strip()
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
+        ips = [ip.strip() for ip in x_forwarded_for.split(',')]
+        
+        for ip in reversed(ips):
+            try:
+                ip_obj = ipaddress.ip_address(ip)
+                if not (ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local):
+                    return ip
+            except ValueError:
+                continue
+    
+    return request.META.get('REMOTE_ADDR', '0.0.0.0')
 
 
 def log_security_event(event_type, user=None, ip_address=None, user_agent=None, details=None, request=None):
-    """Log security events for audit trail"""
     from accounts.models import SecurityEvent
     
-    # Extract user_agent from request if not provided
     if user_agent is None and request is not None:
         user_agent = request.META.get('HTTP_USER_AGENT', 'Unknown')
     
-    # Default to 'Unknown' if still None
     if user_agent is None:
         user_agent = 'Unknown'
     
@@ -79,25 +96,14 @@ def log_security_event(event_type, user=None, ip_address=None, user_agent=None, 
 
 
 def strip_image_metadata(image_file):
-    """
-    Strip EXIF and other metadata from uploaded images
-    Returns a new image file with metadata removed
-    """
-    from PIL import Image
-    import io
-    
-    # Open the image
     img = Image.open(image_file)
     
-    # Create a new image without metadata
     data = list(img.getdata())
     image_without_exif = Image.new(img.mode, img.size)
     image_without_exif.putdata(data)
     
-    # Save to bytes buffer
     output = io.BytesIO()
     
-    # Determine format
     format = img.format if img.format else 'JPEG'
     if format == 'JPEG':
         image_without_exif.save(output, format='JPEG', quality=85, optimize=True)
@@ -111,16 +117,8 @@ def strip_image_metadata(image_file):
 
 
 def reencode_image(image_file, max_size=(2048, 2048)):
-    """
-    Re-encode uploaded image to strip potential malicious code
-    and resize if necessary
-    """
-    from PIL import Image
-    import io
-    
     img = Image.open(image_file)
     
-    # Convert RGBA to RGB if necessary (for JPEG)
     if img.mode in ('RGBA', 'LA', 'P'):
         background = Image.new('RGB', img.size, (255, 255, 255))
         if img.mode == 'P':
@@ -128,10 +126,8 @@ def reencode_image(image_file, max_size=(2048, 2048)):
         background.paste(img, mask=img.split()[-1] if img.mode in ('RGBA', 'LA') else None)
         img = background
     
-    # Resize if necessary
     img.thumbnail(max_size, Image.Resampling.LANCZOS)
     
-    # Save to bytes buffer
     output = io.BytesIO()
     img.save(output, format='JPEG', quality=85, optimize=True)
     output.seek(0)
@@ -140,41 +136,56 @@ def reencode_image(image_file, max_size=(2048, 2048)):
 
 
 def check_content_safety(text):
-    """
-    Basic content safety check
-    Can be extended with ML-based moderation services
-    """
-    import re
+    text_normalized = text.lower()
+    text_normalized = re.sub(r'\s+', ' ', text_normalized)
     
-    # List of blocked words/patterns
     blocked_patterns = [
-        r'<script',
-        r'javascript:',
-        r'onerror=',
-        r'onclick=',
+        r'<\s*script',
+        r'&lt;\s*script',
+        r'javascript\s*:',
+        r'jav\s*ascript\s*:',
+        r'java\s*script\s*:',
+        r'\bon\w+\s*=',
+        r'onerror\s*=',
+        r'onload\s*=',
+        r'onclick\s*=',
+        r'onmouseover\s*=',
+        r'onmouseout\s*=',
+        r'onfocus\s*=',
+        r'onblur\s*=',
+        r'onsubmit\s*=',
+        r'onchange\s*=',
+        r'<\s*iframe',
+        r'<\s*object',
+        r'<\s*embed',
+        r'<\s*applet',
+        r'<\s*meta',
+        r'<\s*link',
+        r'<\s*style',
+        r'eval\s*\(',
+        r'settimeout\s*\(',
+        r'setinterval\s*\(',
+        r'expression\s*\(',
+        r'-moz-binding',
+        r'vbscript\s*:',
+        r'data\s*:\s*text/html',
+        r'data\s*:\s*text/javascript',
+        r'base64.*<\s*script',
+        r'@import',
     ]
     
-    text_lower = text.lower()
-    
     for pattern in blocked_patterns:
-        if re.search(pattern, text_lower):
-            return False, f"Content contains prohibited pattern: {pattern}"
+        if re.search(pattern, text_normalized, re.IGNORECASE):
+            return False, "Content contains potentially dangerous patterns"
     
     return True, "Content is safe"
 
 
 def require_role(role):
-    """
-    Decorator to require specific user role
-    
-    Args:
-        role: Required role ('user', 'admin')
-    """
     def decorator(view_func):
         @wraps(view_func)
         def wrapper(request, *args, **kwargs):
             if not request.user.is_authenticated:
-                from django.shortcuts import redirect
                 return redirect('accounts:login')
             
             if role == 'admin' and not request.user.is_admin:

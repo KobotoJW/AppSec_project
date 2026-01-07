@@ -42,8 +42,12 @@ class RegistrationForm(forms.Form):
     def clean_email(self):
         email = self.cleaned_data.get('email', '').lower().strip()
         
+        # Use generic message to prevent email enumeration
         if User.objects.filter(email=email).exists():
-            raise ValidationError('Unable to create account. Please check your input.')
+            raise ValidationError(
+                'If this email is not already registered, '
+                'an activation link will be sent to your inbox.'
+            )
         
         return email
     
