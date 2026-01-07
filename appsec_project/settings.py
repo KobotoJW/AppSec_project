@@ -11,19 +11,37 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from django.core.management.utils import get_random_secret_key
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file in development
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / '.env')
+except ImportError:
+    # python-dotenv not installed, will use system environment variables
+    pass
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@tyt-!8xr!dcb_81y2l^p$4)he@y-=2up35219qke7$kmz2qxt'
+# Generate a new key for production: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    if os.environ.get('DJANGO_DEBUG', 'True') == 'True':
+        # Development fallback - generate random key
+        SECRET_KEY = get_random_secret_key()
+        print("⚠️  WARNING: Using auto-generated SECRET_KEY. Set DJANGO_SECRET_KEY environment variable for production!")
+    else:
+        raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production!")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -83,13 +101,17 @@ WSGI_APPLICATION = 'appsec_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'appsec_db',
-        'USER': 'appsec_user',
-        'PASSWORD': 'appsec_secret_password',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', 'appsec_db'),
+        'USER': os.environ.get('DB_USER', 'appsec_user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'appsec_secret_password'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
+
+# Validate database password is set in production
+if not DEBUG and DATABASES['default']['PASSWORD'] == 'appsec_secret_password':
+    raise ValueError("DB_PASSWORD environment variable must be set in production!")
 
 
 # Password validation

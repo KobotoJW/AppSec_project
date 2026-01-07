@@ -100,70 +100,47 @@ class ActivationToken(models.Model):
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         expires_at = timezone.now() + timedelta(hours=cls.TOKEN_EXPIRY_HOURS)
         
-        print(f"\n{'='*60}")
-        print(f"CREATING ACTIVATION TOKEN FOR: {user.email}")
-        print(f"{'='*60}")
-        print(f"Raw token: {raw_token}")
-        print(f"Token length: {len(raw_token)}")
-        print(f"Token hash: {token_hash}")
-        print(f"Expires at: {expires_at}")
-        
-        old_tokens = cls.objects.filter(user=user, used=False).update(used=True)
-        print(f"Marked {old_tokens} old tokens as used")
+        # Mark old tokens as used
+        cls.objects.filter(user=user, used=False).update(used=True)
         
         token = cls.objects.create(
             user=user,
             token_hash=token_hash,
             expires_at=expires_at
         )
-        print(f"Token created successfully with hash: {token.token_hash[:20]}...")
-        print(f"{'='*60}\n")
         
         return raw_token, token
     
     @classmethod
-    @classmethod
     def verify_token(cls, raw_token):
+        """
+        Verify activation token with constant-time checks to prevent timing attacks
+        """
+        import hmac
+        
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-        
-        print(f"\n{'='*60}")
-        print(f"ACTIVATION TOKEN VERIFICATION")
-        print(f"{'='*60}")
-        print(f"Raw token (FULL): {raw_token}")
-        print(f"Token length: {len(raw_token)}")
-        print(f"Token hash: {token_hash}")
-        
-        all_tokens = cls.objects.filter(user__isnull=False)
-        print(f"\nTokens in database: {all_tokens.count()}")
-        for t in all_tokens[:5]:
-            print(f"  - Hash: {t.token_hash[:30]}... (used={t.used})")
         
         try:
             token = cls.objects.select_related('user').get(token_hash=token_hash)
-            print(f"✓ Token found for user: {token.user.email}")
+            
+            # Perform all checks before returning to prevent timing attacks
+            is_valid = (
+                not token.used and
+                timezone.now() <= token.expires_at
+            )
+            
+            if is_valid:
+                # Mark token as used
+                token.used = True
+                token.save(update_fields=['used'])
+                return True, 'Account activated successfully.', token.user
+            
         except cls.DoesNotExist:
-            print(f"✗ Token NOT FOUND in database")
-            print(f"{'='*60}\n")
-            return False, 'Invalid activation token.', None
+            pass  # Fall through to generic error
         
-        if token.used:
-            print(f"✗ Token already used")
-            print(f"{'='*60}\n")
-            return False, 'This activation link has already been used.', None
-        
-        if timezone.now() > token.expires_at:
-            print(f"✗ Token expired at: {token.expires_at}")
-            print(f"Current time: {timezone.now()}")
-            print(f"{'='*60}\n")
-            return False, 'This activation link has expired.', token.user
-        
-        print(f"✓ Token is valid, marking as used")
-        token.used = True
-        token.save()
-        print(f"✓ User {token.user.email} account activated")
-        print(f"{'='*60}\n")
-        
-        return True, 'Account activated successfully.', token.user
+        # Always return same generic message to prevent timing attacks
+        # Don't reveal if token exists, is used, or is expired
+        return False, 'Invalid or expired activation link.', None
     
     @property
     def is_expired(self):
@@ -206,24 +183,33 @@ class PasswordResetToken(models.Model):
     
     @classmethod
     def verify_token(cls, raw_token):
-        """Verify and consume a password reset token."""
+        """
+        Verify password reset token with constant-time checks to prevent timing attacks
+        """
+        import hmac
+        
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         
         try:
             token = cls.objects.select_related('user').get(token_hash=token_hash)
+            
+            # Perform all checks before returning to prevent timing attacks
+            is_valid = (
+                not token.used and
+                timezone.now() <= token.expires_at
+            )
+            
+            if is_valid:
+                # Mark token as used
+                token.used = True
+                token.save(update_fields=['used'])
+                return True, 'Password reset successful.', token.user
+            
         except cls.DoesNotExist:
-            return False, 'Invalid password reset token.', None
+            pass  # Fall through to generic error
         
-        if token.used:
-            return False, 'This password reset link has already been used.', None
-        
-        if timezone.now() > token.expires_at:
-            return False, 'This password reset link has expired.', token.user
-        
-        token.used = True
-        token.save()
-        
-        return True, 'Password reset successful.', token.user
+        # Always return same generic message to prevent timing attacks
+        return False, 'Invalid or expired password reset link.', None
     
     @property
     def is_expired(self):

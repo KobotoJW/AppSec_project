@@ -288,11 +288,6 @@ If you did not request a password reset, please ignore this email.
 """
         
         try:
-            print(f"\n{'='*60}")
-            print(f"SENDING PASSWORD RESET EMAIL TO: {user.email}")
-            print(f"{'='*60}")
-            print(f"Password reset URL: {reset_url}")
-            
             # Use EmailMessage to avoid quoted-printable encoding issues
             email = EmailMessage(
                 subject=subject,
@@ -300,15 +295,9 @@ If you did not request a password reset, please ignore this email.
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=[user.email],
             )
-            result = email.send(fail_silently=False)
-            
-            print(f"Email sent successfully. Messages sent: {result}")
-            print(f"{'='*60}\n")
+            email.send(fail_silently=False)
         except Exception as e:
-            print(f"\n{'='*60}")
-            print(f"ERROR: Failed to send password reset email to {user.email}")
-            print(f"Exception: {e}")
-            print(f"{'='*60}\n")
+            # Log error but don't expose details to user
             raise
 
 
@@ -392,20 +381,11 @@ class RegistrationSuccessView(View):
 
 class ActivateAccountView(View):    
     def get(self, request, token):
-        print(f"\n{'='*60}")
-        print(f"ACTIVATION REQUEST RECEIVED")
-        print(f"Token: {token[:20]}...")
-        print(f"{'='*60}\n")
-        
         success, message, user = ActivationToken.verify_token(token)
         
-        print(f"\nVerification result: success={success}, message={message}, user={user.email if user else None}\n")
-        
         if success:
-            print(f"Setting user {user.email} as active")
             user.is_active = True
             user.save()
-            print(f"User saved successfully\n")
             messages.success(request, message)
             return redirect('accounts:activation_success')
         else:
@@ -468,9 +448,6 @@ If you did not request this email, please ignore it.
 """
         
         try:
-            print(f"\n{'='*60}")
-            print(f"SENDING ACTIVATION EMAIL TO: {user.email}")
-            print(f"{'='*60}")
             result = send_mail(
                 subject=subject,
                 message=message,
@@ -478,11 +455,6 @@ If you did not request this email, please ignore it.
                 recipient_list=[user.email],
                 fail_silently=False,
             )
-            print(f"Email sent successfully. Messages sent: {result}")
-            print(f"{'='*60}\n")
         except Exception as e:
-            print(f"\n{'='*60}")
-            print(f"ERROR: Failed to send activation email to {user.email}")
-            print(f"Exception: {e}")
-            print(f"{'='*60}\n")
+            # Log error but don't expose details to user
             raise

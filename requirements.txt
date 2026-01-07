@@ -6,3 +6,4 @@ psycopg-binary==3.3.2
 sqlparse==0.5.4
 typing_extensions==4.15.0
 Pillow==11.0.0
+python-dotenv==1.0.0
