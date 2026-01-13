@@ -26,18 +26,18 @@ def feed(request):
     search_form = SearchForm(request.GET or None)
     query = None
     
-    # Get all non-deleted posts
+                               
     posts = Post.objects.filter(is_deleted=False).select_related('author').prefetch_related('comments', 'ratings')
     
-    # Handle search with SQL injection protection (Django ORM)
+                                                              
     if search_form.is_valid() and search_form.cleaned_data.get('query'):
         query = search_form.cleaned_data['query']
-        # Django ORM automatically escapes parameters, preventing SQL injection
+                                                                               
         posts = posts.filter(
             Q(content__icontains=query) | Q(author__email__icontains=query)
         )
         
-        # Log search for security monitoring
+                                            
         if request.user.is_authenticated:
             log_security_event(
                 event_type='search',
@@ -47,23 +47,23 @@ def feed(request):
                 request=request
             )
     
-    # Annotate with comment and rating counts
+                                             
     posts = posts.annotate(
         comment_count=Count('comments', filter=Q(comments__is_deleted=False)),
         rating_avg=Avg('ratings__value')
-    ).order_by('-created_at')  # Newest posts first
+    ).order_by('-created_at')                      
     
-    # Pagination with validation
-    paginator = Paginator(posts, 10)  # 10 posts per page
+                                
+    paginator = Paginator(posts, 10)                     
     
-    # Validate and sanitize page number
+                                       
     page_number = request.GET.get('page', 1)
     try:
         page_number = int(page_number)
-        # Limit to reasonable range
+                                   
         if page_number < 1:
             page_number = 1
-        elif page_number > 10000:  # Maximum 10,000 pages
+        elif page_number > 10000:                        
             page_number = 10000
     except (TypeError, ValueError):
         page_number = 1
@@ -81,7 +81,7 @@ def feed(request):
 
 
 @login_required
-@rate_limit('post_create', max_requests=30, time_window_minutes=60)  # 30 posts per hour
+@rate_limit('post_create', max_requests=10, time_window_minutes=60)                     
 @require_http_methods(["GET", "POST"])
 def create_post(request):
     """
@@ -92,7 +92,7 @@ def create_post(request):
         form = PostForm(request.POST, request.FILES)
         
         if form.is_valid():
-            # Content safety check
+                                  
             content = form.cleaned_data['content']
             is_safe, message = check_content_safety(content)
             
@@ -103,10 +103,10 @@ def create_post(request):
             post = form.save(commit=False)
             post.author = request.user
             
-            # Process image if uploaded
+                                       
             if post.image:
                 try:
-                    # Re-encode image to strip metadata and potential malicious code
+                                                                                    
                     reencoded = reencode_image(post.image)
                     filename = f"{post.id}.jpg"
                     post.image.save(filename, ContentFile(reencoded.read()), save=False)
@@ -116,7 +116,7 @@ def create_post(request):
             
             post.save()
             
-            # Log security event
+                                
             log_security_event(
                 event_type='post_created',
                 user=request.user,
@@ -143,10 +143,10 @@ def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id, is_deleted=False)
     comments = post.comments.filter(is_deleted=False).select_related('author').order_by('created_at')
     
-    # Get rating statistics
+                           
     rating_stats = post.get_rating_stats()
     
-    # Check if current user has rated this post
+                                               
     user_rating = None
     if request.user.is_authenticated:
         try:
@@ -154,7 +154,7 @@ def post_detail(request, post_id):
         except Rating.DoesNotExist:
             pass
     
-    # Forms for authenticated users
+                                   
     comment_form = CommentForm() if request.user.is_authenticated else None
     rating_form = RatingForm(instance=user_rating) if request.user.is_authenticated else None
     
@@ -174,7 +174,7 @@ def post_detail(request, post_id):
 
 
 @login_required
-@rate_limit('comment_add', max_requests=30, time_window_minutes=60)  # 30 comments per hour
+@rate_limit('comment_add', max_requests=30, time_window_minutes=60)                        
 @require_POST
 def add_comment(request, post_id):
     """Add a comment to a post"""
@@ -182,7 +182,7 @@ def add_comment(request, post_id):
     form = CommentForm(request.POST)
     
     if form.is_valid():
-        # Content safety check
+                              
         content = form.cleaned_data['content']
         is_safe, message = check_content_safety(content)
         
@@ -195,7 +195,7 @@ def add_comment(request, post_id):
         comment.author = request.user
         comment.save()
         
-        # Log security event
+                            
         log_security_event(
             event_type='comment_created',
             user=request.user,
@@ -212,13 +212,13 @@ def add_comment(request, post_id):
 
 
 @login_required
-@rate_limit('rating_add', max_requests=50, time_window_minutes=60)  # 50 ratings per hour
+@rate_limit('rating_add', max_requests=100, time_window_minutes=60)                       
 @require_POST
 def rate_post(request, post_id):
     """Rate a post (1-5 stars)"""
     post = get_object_or_404(Post, id=post_id, is_deleted=False)
     
-    # Get or create rating
+                          
     rating, created = Rating.objects.get_or_create(
         post=post,
         user=request.user,
@@ -226,14 +226,14 @@ def rate_post(request, post_id):
     )
     
     if not created:
-        # Update existing rating
+                                
         rating.value = int(request.POST.get('value', rating.value))
         rating.save()
         messages.success(request, 'Rating updated!')
     else:
         messages.success(request, 'Rating added!')
     
-    # Log security event
+                        
     log_security_event(
         event_type='post_rated',
         user=request.user,
@@ -254,14 +254,14 @@ def delete_post(request, post_id):
     """
     post = get_object_or_404(Post, id=post_id)
     
-    # Check permissions
+                       
     if post.author != request.user and not request.user.is_admin:
         return HttpResponseForbidden("You don't have permission to delete this post")
     
-    # Soft delete
+                 
     post.soft_delete(deleted_by_user=request.user)
     
-    # Log security event
+                        
     log_security_event(
         event_type='post_deleted',
         user=request.user,
@@ -287,16 +287,16 @@ def delete_comment(request, comment_id):
     """
     comment = get_object_or_404(Comment, id=comment_id)
     
-    # Check permissions
+                       
     if comment.author != request.user and not request.user.is_admin:
         return HttpResponseForbidden("You don't have permission to delete this comment")
     
     post_id = comment.post.id
     
-    # Soft delete
+                 
     comment.soft_delete(deleted_by_user=request.user)
     
-    # Log security event
+                        
     log_security_event(
         event_type='comment_deleted',
         user=request.user,
@@ -339,14 +339,14 @@ def report_content(request, content_type, content_id):
             report.comment = report_comment
             report.save()
             
-            # Increment flag count on post
+                                          
             if report_post:
                 report_post.flag_count += 1
-                if report_post.flag_count >= 3:  # Auto-flag after 3 reports
+                if report_post.flag_count >= 3:                             
                     report_post.is_flagged = True
                 report_post.save()
             
-            # Log security event
+                                
             log_security_event(
                 event_type='content_reported',
                 user=request.user,
@@ -397,7 +397,7 @@ def moderation_queue(request):
 def handle_report(request, report_id):
     """Admin action to handle a content report"""
     report = get_object_or_404(ContentReport, id=report_id)
-    action = request.POST.get('action')  # 'dismiss', 'delete_content'
+    action = request.POST.get('action')                               
     
     if action == 'dismiss':
         report.status = 'dismissed'
@@ -407,7 +407,7 @@ def handle_report(request, report_id):
         messages.success(request, 'Report dismissed.')
         
     elif action == 'delete_content':
-        # Delete the reported content
+                                     
         if report.post:
             report.post.soft_delete(deleted_by_user=request.user)
         elif report.comment:
@@ -419,7 +419,7 @@ def handle_report(request, report_id):
         report.save()
         messages.success(request, 'Content deleted and report marked as resolved.')
     
-    # Log admin action
+                      
     log_security_event(
         event_type='report_handled',
         user=request.user,
@@ -450,7 +450,7 @@ def restore_content(request, content_type, content_id):
     else:
         return HttpResponseForbidden("Invalid content type")
     
-    # Log admin action
+                      
     log_security_event(
         event_type='content_restored',
         user=request.user,

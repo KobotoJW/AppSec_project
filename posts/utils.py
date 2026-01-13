@@ -25,30 +25,30 @@ def rate_limit(key_prefix, max_requests, time_window_minutes):
         @wraps(view_func)
         def wrapper(request, *args, **kwargs):
             if request.user.is_authenticated:
-                # Use user ID for authenticated users
+                                                     
                 identifier = str(request.user.id)
             else:
-                # Use IP address for anonymous users
+                                                    
                 identifier = get_client_ip(request)
             
             cache_key = f"rate_limit:{key_prefix}:{identifier}"
             timeout = time_window_minutes * 60
             
-            # Try atomic increment first
+                                        
             try:
-                # This is atomic in most cache backends
+                                                       
                 current_count = cache.incr(cache_key)
                 
-                # If this is the first increment, set the expiry
+                                                                
                 if current_count == 1:
                     cache.touch(cache_key, timeout)
                     
             except ValueError:
-                # Key doesn't exist yet, create it atomically
+                                                             
                 cache.add(cache_key, 1, timeout)
                 current_count = 1
             
-            # Check if limit exceeded
+                                     
             if current_count > max_requests:
                 return HttpResponseForbidden(
                     f"Rate limit exceeded. Please try again in {time_window_minutes} minutes."

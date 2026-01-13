@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from .models import User, ActivationToken, SecurityEvent, LoginAttempt
 
 
@@ -85,13 +86,9 @@ class LoginAttemptAdmin(admin.ModelAdmin):
     
     def success_badge(self, obj):
         if obj.success:
-            return format_html(
-                '<span style="background-color: #28a745; color: white; padding: 3px 8px; border-radius: 3px; font-weight: bold;">✓ Success</span>'
-            )
+            return mark_safe('<span style="background-color: #28a745; color: white; padding: 3px 8px; border-radius: 3px; font-weight: bold;">✓ Success</span>')
         else:
-            return format_html(
-                '<span style="background-color: #dc3545; color: white; padding: 3px 8px; border-radius: 3px; font-weight: bold;">✗ Failed</span>'
-            )
+            return mark_safe('<span style="background-color: #dc3545; color: white; padding: 3px 8px; border-radius: 3px; font-weight: bold;">✗ Failed</span>')
     success_badge.short_description = 'Status'
     
     def user_agent_short(self, obj):

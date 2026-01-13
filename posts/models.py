@@ -26,11 +26,11 @@ class Post(models.Model):
         help_text="Optional image attachment"
     )
     
-    # Metadata
+              
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    # Moderation
+                
     is_deleted = models.BooleanField(default=False, help_text="Soft delete flag")
     deleted_at = models.DateTimeField(null=True, blank=True)
     deleted_by = models.ForeignKey(
@@ -41,7 +41,7 @@ class Post(models.Model):
         related_name='deleted_posts'
     )
     
-    # Reporting and moderation
+                              
     is_flagged = models.BooleanField(default=False, help_text="Flagged for moderation")
     flag_count = models.IntegerField(default=0)
     
@@ -89,11 +89,11 @@ class Comment(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments')
     content = models.TextField(max_length=2000, help_text="Comment content")
     
-    # Metadata
+              
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    # Moderation
+                
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
     deleted_by = models.ForeignKey(
@@ -143,7 +143,7 @@ class Rating(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ['post', 'user']  # One rating per user per post
+        unique_together = ['post', 'user']                                
         indexes = [
             models.Index(fields=['post', 'user']),
         ]
@@ -179,7 +179,7 @@ class ContentReport(models.Model):
     description = models.TextField(max_length=1000, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
-    # Admin handling
+                    
     reviewed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

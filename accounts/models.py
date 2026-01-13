@@ -100,7 +100,7 @@ class ActivationToken(models.Model):
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         expires_at = timezone.now() + timedelta(hours=cls.TOKEN_EXPIRY_HOURS)
         
-        # Mark old tokens as used
+                                 
         cls.objects.filter(user=user, used=False).update(used=True)
         
         token = cls.objects.create(

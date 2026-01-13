@@ -20,7 +20,7 @@ try:
     from dotenv import load_dotenv
     load_dotenv(BASE_DIR / '.env')
 except ImportError:
-    # python-dotenv not installed, will use system environment variables
+                                                                        
     pass
 
 
@@ -36,11 +36,11 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-# CSRF settings for development
+                               
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
 
 
-# Application definition
+                        
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     'posts',
 ]
 
-# Custom User Model
+                   
 AUTH_USER_MODEL = 'accounts.User'
 
 MIDDLEWARE = [
@@ -86,8 +86,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'appsec_project.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+          
+                                                               
 
 DATABASES = {
     'default': {
@@ -100,13 +100,13 @@ DATABASES = {
     }
 }
 
-# Validate database password is set in production
+                                                 
 if not DEBUG and DATABASES['default']['PASSWORD'] == 'appsec_secret_password':
     raise ValueError("DB_PASSWORD environment variable must be set in production!")
 
 
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+                     
+                                                                              
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -124,8 +124,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
+                      
+                                                    
 
 LANGUAGE_CODE = 'en-us'
 
@@ -135,7 +135,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-# Caching Configuration
+                       
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -143,78 +143,78 @@ CACHES = {
     }
 }
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+                                        
+                                                           
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Media files (User-uploaded content)
+                                     
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+                                
+                                                                        
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Email Configuration
-# For development, use console backend (prints emails to console)
+                     
+                                                                 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@example.com'
 
-# Use UTF-8 encoding to prevent quoted-printable line breaks
+                                                            
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = False
 
-# For production, configure SMTP:
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.example.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'your-email@example.com'
-# EMAIL_HOST_PASSWORD = 'your-password'
+                                 
+                                                               
+                                 
+                  
+                      
+                                            
+                                       
 
-# Security Settings
-# For production, uncomment these:
-# SECURE_SSL_REDIRECT = True
-# SECURE_HSTS_SECONDS = 31536000
-# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-# SECURE_HSTS_PRELOAD = True
-# SESSION_COOKIE_SECURE = True
-# CSRF_COOKIE_SECURE = True
+                   
+                                  
+                            
+                                
+                                       
+                            
+                              
+                           
 
-# Security Headers
+                  
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
-# Enhanced Content Security Policy (CSP)
-# Stricter policy to prevent XSS and other injection attacks
+                                        
+                                                            
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'",)  # Removed 'unsafe-inline' for better security
+CSP_STYLE_SRC = ("'self'",)                                               
 CSP_SCRIPT_SRC = ("'self'",)
-CSP_IMG_SRC = ("'self'",)  # Removed data: URIs to prevent SVG XSS
+CSP_IMG_SRC = ("'self'",)                                         
 CSP_FONT_SRC = ("'self'",)
-CSP_FRAME_ANCESTORS = ("'none'",)  # Prevent clickjacking
-CSP_FORM_ACTION = ("'self'",)  # Restrict form submissions
-CSP_BASE_URI = ("'self'",)  # Prevent base tag injection
-CSP_OBJECT_SRC = ("'none'",)  # Block plugins
-CSP_CONNECT_SRC = ("'self'",)  # Restrict AJAX/WebSocket connections
+CSP_FRAME_ANCESTORS = ("'none'",)                        
+CSP_FORM_ACTION = ("'self'",)                             
+CSP_BASE_URI = ("'self'",)                              
+CSP_OBJECT_SRC = ("'none'",)                 
+CSP_CONNECT_SRC = ("'self'",)                                       
 
-# Additional security headers
+                             
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
-# Session Configuration
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Server-side session storage
-SESSION_COOKIE_AGE = 1800  # 30 minutes idle timeout
-SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access
-SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
-SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection
+                       
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'                               
+SESSION_COOKIE_AGE = 1800                           
+SESSION_COOKIE_HTTPONLY = True                             
+SESSION_COOKIE_SECURE = False                                        
+SESSION_COOKIE_SAMESITE = 'Lax'                   
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-SESSION_SAVE_EVERY_REQUEST = True  # Update session timeout on each request
+SESSION_SAVE_EVERY_REQUEST = True                                          
 
-# Password Hashers - bcrypt is preferred
+                                        
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',

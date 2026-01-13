@@ -27,7 +27,7 @@ def rate_limit(max_attempts=5, window_seconds=900):
     def decorator(func):
         @wraps(func)
         def wrapper(self, request, *args, **kwargs):
-            # client IP
+                       
             x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
             if x_forwarded_for:
                 client_ip = x_forwarded_for.split(',')[0]
@@ -143,17 +143,17 @@ class LoginView(View):
                 details={'email': email}
             )
             
-            # Update last_login
+                               
             user.last_login = timezone.now()
             user.save(update_fields=['last_login'])
             
-            # Log in user (Django session)
+                                          
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             
             messages.success(request, 'Logged in successfully.')
             return redirect('accounts:dashboard')
         else:
-            # Log failed login attempt
+                                      
             LoginAttempt.objects.create(
                 email=email,
                 ip_address=ip_address,
@@ -161,14 +161,14 @@ class LoginView(View):
                 success=False
             )
             
-            # Check if we should lock the account
+                                                 
             self._check_and_lock_account(email, ip_address)
         
         return render(request, self.template_name, {'form': form})
     
     def _check_and_lock_account(self, email, ip_address):
         """Check failed login attempts and lock account if threshold exceeded."""
-        # Check failed attempts in last 15 minutes
+                                                  
         fifteen_minutes_ago = timezone.now() - timedelta(minutes=15)
         failed_attempts = LoginAttempt.objects.filter(
             email=email,
@@ -176,7 +176,7 @@ class LoginView(View):
             created_at__gte=fifteen_minutes_ago
         ).count()
         
-        # Lock account after 5 failed attempts
+                                              
         if failed_attempts >= 5:
             try:
                 user = User.objects.get(email=email)
@@ -184,7 +184,7 @@ class LoginView(View):
                 user.locked_until = timezone.now() + timedelta(minutes=15)
                 user.save(update_fields=['is_locked', 'locked_until'])
                 
-                # Create security event
+                                       
                 SecurityEvent.objects.create(
                     user=user,
                     event_type='account_locked',
@@ -204,7 +204,7 @@ class LogoutView(View):
     
     def _logout(self, request):
         if request.user.is_authenticated:
-            # Create security event
+                                   
             SecurityEvent.objects.create(
                 user=request.user,
                 event_type='logout',
@@ -236,7 +236,7 @@ class PasswordResetRequestView(View):
         form = PasswordResetRequestForm()
         return render(request, self.template_name, {'form': form})
     
-    @rate_limit(max_attempts=3, window_seconds=3600)  # 3 attempts per hour per IP
+    @rate_limit(max_attempts=3, window_seconds=3600)                              
     def post(self, request):
         form = PasswordResetRequestForm(request.POST)
         ip_address = self._get_client_ip(request)
@@ -250,7 +250,7 @@ class PasswordResetRequestView(View):
                 
                 self._send_password_reset_email(request, user, raw_token)
                 
-                # Create security event
+                                       
                 SecurityEvent.objects.create(
                     user=user,
                     event_type='password_reset',
@@ -259,10 +259,10 @@ class PasswordResetRequestView(View):
                     details={'action': 'reset_requested'}
                 )
             except User.DoesNotExist:
-                # Don't reveal if email exists (prevent enumeration)
+                                                                    
                 pass
             
-            # Always show same message to prevent enumeration
+                                                             
             messages.success(
                 request,
                 'If an account exists with that email, a password reset link has been sent.'
@@ -290,7 +290,7 @@ If you did not request a password reset, please ignore this email.
 """
         
         try:
-            # Use EmailMessage to avoid quoted-printable encoding issues
+                                                                        
             email = EmailMessage(
                 subject=subject,
                 body=message,
@@ -299,7 +299,7 @@ If you did not request a password reset, please ignore this email.
             )
             email.send(fail_silently=False)
         except Exception as e:
-            # Log error but don't expose details to user
+                                                        
             raise
 
 
@@ -307,7 +307,7 @@ class PasswordResetConfirmView(View):
     template_name = 'accounts/password_reset_confirm.html'
     
     def get(self, request, token):
-        # Just display the form with the token (don't verify yet)
+                                                                 
         form = PasswordResetForm()
         context = {
             'form': form,
@@ -322,18 +322,18 @@ class PasswordResetConfirmView(View):
             password = form.cleaned_data['password']
             ip_address = self._get_client_ip(request)
             
-            # Verify token
+                          
             success, message, user = PasswordResetToken.verify_token(token)
             
             if success and user:
-                # Set new password
+                                  
                 user.set_password(password)
                 user.save(update_fields=['password'])
                 
-                # Invalidate all sessions
+                                         
                 self._invalidate_all_sessions(user)
                 
-                # Create security event
+                                       
                 SecurityEvent.objects.create(
                     user=user,
                     event_type='password_change',
@@ -348,7 +348,7 @@ class PasswordResetConfirmView(View):
                 )
                 return redirect('accounts:login')
             else:
-                # Token invalid or expired
+                                          
                 context = {
                     'error_message': message,
                     'token': token,
@@ -452,5 +452,5 @@ If you did not request this email, please ignore it.
                 fail_silently=False,
             )
         except Exception as e:
-            # Log error but don't expose details to user
+                                                        
             raise

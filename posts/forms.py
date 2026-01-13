@@ -7,8 +7,8 @@ from .models import Post, Comment, Rating, ContentReport
 class PostForm(forms.ModelForm):
     """Form for creating posts with security validation"""
     
-    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-    MAX_IMAGE_DIMENSION = 4096  # Max width/height in pixels
+    MAX_FILE_SIZE = 5 * 1024 * 1024       
+    MAX_IMAGE_DIMENSION = 4096                              
     
     class Meta:
         model = Post
@@ -41,32 +41,32 @@ class PostForm(forms.ModelForm):
         if not image:
             return image
         
-        # Check file size
+                         
         if image.size > self.MAX_FILE_SIZE:
             raise ValidationError(f"Image file too large (max {self.MAX_FILE_SIZE // (1024*1024)}MB)")
         
-        # Check if it's actually an image
+                                         
         try:
             img = Image.open(image)
-            img.verify()  # Verify it's a valid image
+            img.verify()                             
             
-            # Re-open for further checks (verify() closes the file)
+                                                                   
             image.seek(0)
             img = Image.open(image)
             
-            # Check dimensions
+                              
             width, height = img.size
             if width > self.MAX_IMAGE_DIMENSION or height > self.MAX_IMAGE_DIMENSION:
                 raise ValidationError(f"Image dimensions too large (max {self.MAX_IMAGE_DIMENSION}x{self.MAX_IMAGE_DIMENSION})")
             
-            # Check format is allowed
+                                     
             if img.format.upper() not in ['JPEG', 'PNG', 'GIF', 'WEBP']:
                 raise ValidationError("Invalid image format. Only JPEG, PNG, GIF, and WEBP are allowed")
             
         except Exception as e:
             raise ValidationError(f"Invalid image file: {str(e)}")
         
-        # Reset file pointer
+                            
         image.seek(0)
         return image
 
@@ -158,5 +158,5 @@ class SearchForm(forms.Form):
         query = self.cleaned_data.get('query', '').strip()
         if len(query) > 200:
             raise ValidationError("Search query is too long")
-        # Django ORM will handle SQL injection protection
+                                                         
         return query
