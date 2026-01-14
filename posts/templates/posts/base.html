@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="DENY">
-    <title>{% block title %}Secure Content Platform{% endblock %}</title>
+    <title>{% block title %}Secure Forum{% endblock %}</title>
     <style>
         * {
             margin: 0;
@@ -185,7 +185,7 @@
 <body>
     <header>
         <div class="container">
-            <h1>Secure Content Platform</h1>
+            <h1>Secure Forum</h1>
             <nav>
                 <a href="{% url 'posts:feed' %}">Feed</a>
                 {% if user.is_authenticated %}

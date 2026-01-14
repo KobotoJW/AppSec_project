@@ -1,6 +1,6 @@
 {% extends "posts/base.html" %}
 
-{% block title %}Report Content - Secure Content Platform{% endblock %}
+{% block title %}Report Content - Secure Forum{% endblock %}
 
 {% block content %}
 <div class="card" style="max-width: 700px; margin: 2rem auto;">
@@ -51,10 +51,5 @@
             <a href="{% url 'posts:feed' %}" class="btn">Cancel</a>
         </div>
     </form>
-    
-    <div class="alert alert-warning" style="margin-top: 2rem;">
-        <strong>Note:</strong> False or malicious reports may result in account suspension.
-        All reports are reviewed by our moderation team.
-    </div>
 </div>
 {% endblock %}

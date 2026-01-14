@@ -1,5 +1,5 @@
 """
-Script to create an admin user for the secure content platform
+Script to create an admin user for the secure forum platform
 """
 import os
 import sys
@@ -64,7 +64,7 @@ def create_test_users():
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("Secure Content Platform - Admin Setup")
+    print("Secure Forum - Admin Setup")
     print("=" * 60)
     
     create_admin()
