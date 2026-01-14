@@ -124,6 +124,7 @@ tmp/
 *.sql
 *.sql.gz
 *.bak
+*.sqlite3
 
 # MacOS
 .AppleDouble
