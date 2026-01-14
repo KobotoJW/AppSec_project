@@ -16,10 +16,6 @@ def rate_limit(key_prefix, max_requests, time_window_minutes):
     
     Args:
         key_prefix: Prefix for cache key (e.g., 'post_create', 'comment_add')
-        max_requests: Maximum number of requests allowed
-        time_window_minutes: Time window in minutes
-    
-    Note: For production, use Redis cache backend for distributed rate limiting
     """
     def decorator(view_func):
         @wraps(view_func)
