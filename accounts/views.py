@@ -239,7 +239,7 @@ class PasswordResetRequestView(View):
     @rate_limit(max_attempts=3, window_seconds=3600)                              
     def post(self, request):
         form = PasswordResetRequestForm(request.POST)
-        ip_address = self._get_client_ip(request)
+        ip_address = get_client_ip(request)
         
         if form.is_valid():
             email = form.cleaned_data['email'].lower().strip()
@@ -320,7 +320,7 @@ class PasswordResetConfirmView(View):
         
         if form.is_valid():
             password = form.cleaned_data['password']
-            ip_address = self._get_client_ip(request)
+            ip_address = get_client_ip(request)
             
                           
             success, message, user = PasswordResetToken.verify_token(token)
